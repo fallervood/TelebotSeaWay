@@ -1,3 +1,4 @@
+import os
 import telebot
 from telebot import types
 
@@ -50,13 +51,19 @@ def get_text_messages(message):
 # -- Content Handler --
 @bot.message_handler(content_types=['photo', 'video', 'audio'])
 def get_photo_messages(message):
-	global admin_id
-	try:
+	file_info = bot.get_file(message.photo[len(message.photo)-1].file_id)
+	file_name, file_extention = os.path.splitext(file_info.file_path)
+	download_file = bot.download_file(file_info.file_path)
+	src = file_name + file_extention
+	with open(src, 'wb') as new_file:
+		new_file.write(download_file)
+	bot.send_photo(admin_id, file_info.file_id)
+	'''try:
 		bot.forward_message(admin_id, message.chat.id, message.message_id)
 		bot.send_message(admin_id, str("*Файл прислал: *" + message.from_user.username), parse_mode="Markdown")
 		bot.send_message(message.from_user.id, "Файл успешно отправлен!")
 	except:
-		bot.send_message(message.chat.id, 'К сожалению сейчас нет админа!')
+		bot.send_message(message.chat.id, 'К сожалению сейчас нет админа!')'''
 
 
 # -- Callback --
@@ -71,12 +78,11 @@ def get_callback(call):
 Вы можете написать боту что угодно после чего он предложит отправить это на проверку админу, расценивая это как пост. \n
 Если Вы хотите разместить картинку, аудио или видео файл, просто отправьте его после поста.\n
 Если Вы хотите оставить ссылку на файл - напишите ее вместе с постом.\n
-
 **Текст** – комбинация делает шрифт жирным.\n
 __Текст__ – комбинация наклоняет шрифт.''')
 	if call.data == "send_post":
 		try:
-			get_new_post(post, author)
+			get_new_post(post, author, file=None)
 			bot.send_message(call.message.chat.id, 'Ваш пост успешно отправлен и будет опубликован после проверки! ✅')
 		except:
 			bot.send_message(call.message.chat.id, 'К сожалению сейчас нет админа!')
